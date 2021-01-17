@@ -1,0 +1,42 @@
+Infrastructure as Code with Terraform and Ansible
+
+Commands:
+
+md terraform
+cd terraform
+foreach ($file in @('main.tf','terraform.tfvars','variables.tf')) {
+$uri = "https://raw.githubusercontent.com/NoBSDevOps/BookResources/master/Part-II-Project/Virtual-Machines/Terraform-VMs/VMs/$file"
+Invoke-WebRequest -Uri $uri -OutFile $file
+}
+
+terraform init
+terraform plan
+
+curl http://ifconfig.me
+13.94.154.85
+
+curl http://ifconfig.me
+141.2.185.17
+
+terraform apply -var="location=eastus" -var="resource_group=monolithRG" -var="cloud_shell_source=13.94.154.85" -var="domain_name_prefix=cloud-1" -var="management_ip=141.2.185.17" -auto-approve
+
+Load_Balancer_IP = "52.152.141.154"
+VMIps = [
+  "52.249.194.249",
+  "52.249.194.35",
+]
+
+cd ..
+mkdir ansibleConfigs 
+cd ansibleConfigs
+
+foreach ($file in @('hosts','iis.yml')) {
+$uri = " https://raw.githubusercontent.com/NoBSDevOps/BookResources/master/Part-II-Project/Virtual-Machines/Ansible-Configuration/$file"
+Invoke-WebRequest -Uri $uri -OutFile $file }
+
+code .
+(update the IPs)
+52.249.194.249
+52.249.194.35
+
+ansible-playbook iis.yml -i hosts
