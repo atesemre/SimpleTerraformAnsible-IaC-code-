@@ -18,12 +18,12 @@ curl http://ifconfig.me (cloud shell)
 curl http://ifconfig.me (windows powershell)
 141.2.185.16
 
-terraform apply -var="location=eastus" -var="resource_group=monolithRG" -var="cloud_shell_source=13.73.177.118" -var="domain_name_prefix=cloud-1" -var="management_ip=141.2.185.16" -auto-approve
+terraform apply -var="location=eastus" -var="resource_group=monolithRG" -var="cloud_shell_source=13.94.154.135" -var="domain_name_prefix=cloud-1" -var="management_ip=141.2.185.16" -auto-approve
 
-Load_Balancer_IP = "40.121.85.96"
+Load_Balancer_IP = "52.170.250.232"
 VMIps = [
-  "23.96.29.144",
-  "40.121.87.183",
+  "52.170.88.198",
+  "52.168.83.46",
 ]
 
 cd ..
