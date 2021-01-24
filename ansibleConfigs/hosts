@@ -4,7 +4,7 @@
 23.96.51.68
 
 [azurevms:vars]
-ansible_user=admin
+ansible_user=testadmin
 ansible_password=Password2021!
 ansible_connection=winrm
 ansible_winrm_transport=basic

@@ -206,16 +206,16 @@ resource "azurerm_lb_rule" "lbrule" {
 }
 
 ## Creates two Windows VMs associating the vNIcs created earlier
-resource "azurerm_windows_virtual_machine" "monolithVMs" {
+resource "azurerm_windows_virtual_machine" "cloudVMs" {
   count                 = 2
-  name                  = "monolithvm-${count.index}"
+  name                  = "cloudvm-${count.index}"
   location              = var.location
   resource_group_name   = azurerm_resource_group.cloudRG.name
   size                  = "Standard_DS1_v2"
   network_interface_ids = [azurerm_network_interface.main[count.index].id]
-  availability_set_id   = azurerm_availability_set.monolith-as.id
-  computer_name         = "monolithvm-${count.index}"
-  admin_username        = "admin"
+  availability_set_id   = azurerm_availability_set.cloud-as.id
+  computer_name         = "cloudvm-${count.index}"
+  admin_username        = "testadmin"
   admin_password        = "Password2021!"
   
   source_image_reference {
