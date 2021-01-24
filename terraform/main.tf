@@ -12,16 +12,16 @@ resource "azurerm_resource_group" "cloudRG" {
   location = var.location
 }
 
-## Create an availability set called monolith-as which the VMs will go into using the same location and resource
+## Create an availability set called cloud-as which the VMs will go into using the same location and resource
 ## group
-resource "azurerm_availability_set" "monolith-as" {
-  name                = "monolith-as"
+resource "azurerm_availability_set" "cloud-as" {
+  name                = "cloud-as"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
 }
 
 ## Create an Azure NSG to protect the infrastructure called nsg.
-resource "azurerm_network_security_group" "monolithnsg" {
+resource "azurerm_network_security_group" "cloudnsg" {
   name                = "nsg"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
@@ -86,7 +86,7 @@ resource "azurerm_network_security_group" "monolithnsg" {
 
 ## Create a simple vNet
 resource "azurerm_virtual_network" "main" {
-  name                = "monolith-network"
+  name                = "cloud-network"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
@@ -128,7 +128,7 @@ resource "azurerm_public_ip" "vmIps" {
 ## to refer to each VM which will be defined in an array
 resource "azurerm_network_interface" "main" {
   count               = 2
-  name                = "monolith-nic-${count.index}"
+  name                = "cloud-nic-${count.index}"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
   
@@ -150,7 +150,7 @@ resource "azurerm_network_interface" "main" {
 resource "azurerm_network_interface_security_group_association" "nsg" {
   count                     = 2
   network_interface_id      = azurerm_network_interface.main[count.index].id
-  network_security_group_id = azurerm_network_security_group.monolithnsg.id
+  network_security_group_id = azurerm_network_security_group.cloudnsg.id
 }
 
 ## Create the load balancer with a frontend configuration using the public
@@ -206,15 +206,15 @@ resource "azurerm_lb_rule" "lbrule" {
 }
 
 ## Creates two Windows VMs associating the vNIcs created earlier
-resource "azurerm_windows_virtual_machine" "monolithVMs" {
+resource "azurerm_windows_virtual_machine" "cloudVMs" {
   count                 = 2
-  name                  = "monolithvm-${count.index}"
+  name                  = "cloudvm-${count.index}"
   location              = var.location
   resource_group_name   = azurerm_resource_group.cloudRG.name
   size                  = "Standard_DS1_v2"
   network_interface_ids = [azurerm_network_interface.main[count.index].id]
-  availability_set_id   = azurerm_availability_set.monolith-as.id
-  computer_name         = "monolithvm-${count.index}"
+  availability_set_id   = azurerm_availability_set.cloud-as.id
+  computer_name         = "cloudvm-${count.index}"
   admin_username        = "testadmin"
   admin_password        = "Password2021!"
   
@@ -241,7 +241,7 @@ resource "azurerm_windows_virtual_machine" "monolithVMs" {
 resource "azurerm_virtual_machine_extension" "enablewinrm" {
   count                 = 2
   name                  = "enablewinrm"
-  virtual_machine_id    = azurerm_windows_virtual_machine.monolithVMs[count.index].id
+  virtual_machine_id    = azurerm_windows_virtual_machine.cloudVMs[count.index].id
   publisher            = "Microsoft.Compute" ## az vm extension image list --location eastus Do not use Microsoft.Azure.Extensions here
   type                 = "CustomScriptExtension" ## az vm extension image list --location eastus Only use CustomScriptExtension here
   type_handler_version = "1.9" ## az vm extension image list --location eastus
