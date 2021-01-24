@@ -180,7 +180,6 @@ resource "azurerm_lb_probe" "lbprobe" {
   name                = "http-running-probe"
   port                = 80
 }
-
 ## Directt traffic to load balancer backend
 resource "azurerm_lb_rule" "lbrule" {
   resource_group_name            = azurerm_resource_group.cloudRG.name
