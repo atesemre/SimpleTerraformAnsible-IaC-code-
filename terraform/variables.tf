@@ -10,6 +10,7 @@ variable "cloud_shell_source" {
 variable "management_ip" {
     type = string
 }
+
 variable "domain_name_prefix" {
     type = string
 }
