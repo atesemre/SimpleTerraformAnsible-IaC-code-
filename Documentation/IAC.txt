@@ -5,7 +5,7 @@ Commands:
 md terraform
 cd terraform
 foreach ($file in @('main.tf','terraform.tfvars','variables.tf')) {
-$uri = "https://raw.githubusercontent.com/NoBSDevOps/BookResources/master/Part-II-Project/Virtual-Machines/Terraform-VMs/VMs/$file"
+$uri = "https://raw.githubusercontent.com/Shubham-Girdhar/Infrastructure-As-Code/main/terraform/$file"
 Invoke-WebRequest -Uri $uri -OutFile $file
 }
 
@@ -13,17 +13,17 @@ terraform init
 terraform plan
 
 curl http://ifconfig.me (cloud shell)
-13.73.177.118
+13.73.178.11
 
 curl http://ifconfig.me (windows powershell)
-141.2.185.16
+141.2.185.17
 
-terraform apply -var="location=eastus" -var="resource_group=monolithRG" -var="cloud_shell_source=13.94.154.135" -var="domain_name_prefix=cloud-1" -var="management_ip=141.2.185.16" -auto-approve
+terraform apply -var="location=eastus" -var="resource_group=cloudRG" -var="cloud_shell_source=13.73.178.11" -var="domain_name_prefix=cloud-project" -var="management_ip=141.2.185.17" -auto-approve
 
-Load_Balancer_IP = "52.170.250.232"
+Load_Balancer_IP = "104.41.132.128"
 VMIps = [
-  "52.170.88.198",
-  "52.168.83.46",
+  "104.41.131.110",
+  "104.41.128.58",
 ]
 
 cd ..
@@ -31,13 +31,13 @@ mkdir ansibleConfigs
 cd ansibleConfigs
 
 foreach ($file in @('hosts','iis.yml')) {
-$uri = " https://raw.githubusercontent.com/NoBSDevOps/BookResources/master/Part-II-Project/Virtual-Machines/Ansible-Configuration/$file"
+$uri = " https://raw.githubusercontent.com/Shubham-Girdhar/Infrastructure-As-Code/main/ansibleConfigs/$file"
 Invoke-WebRequest -Uri $uri -OutFile $file }
 
 code .
 (update the IPs)
-23.96.29.144
-40.121.87.183
+104.41.131.110
+104.41.128.58
 
 ansible-playbook iis.yml -i hosts
 
