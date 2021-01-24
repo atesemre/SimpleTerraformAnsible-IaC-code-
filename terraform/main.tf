@@ -7,7 +7,7 @@ provider "azurerm" {
 
 ## Create an Azure resource group using the value of resource_group and the location of the location variable
 ## defined in the terraform.tfvars file.
-resource "azurerm_resource_group" "monolithRG" {
+resource "azurerm_resource_group" "cloudRG" {
   name     = var.resource_group
   location = var.location
 }
@@ -16,15 +16,15 @@ resource "azurerm_resource_group" "monolithRG" {
 ## group
 resource "azurerm_availability_set" "monolith-as" {
   name                = "monolith-as"
-  location            = azurerm_resource_group.monolithRG.location
-  resource_group_name = azurerm_resource_group.monolithRG.name
+  location            = azurerm_resource_group.cloudRG.location
+  resource_group_name = azurerm_resource_group.cloudRG.name
 }
 
 ## Create an Azure NSG to protect the infrastructure called nsg.
 resource "azurerm_network_security_group" "monolithnsg" {
   name                = "nsg"
-  location            = azurerm_resource_group.monolithRG.location
-  resource_group_name = azurerm_resource_group.monolithRG.name
+  location            = azurerm_resource_group.cloudRG.location
+  resource_group_name = azurerm_resource_group.cloudRG.name
   
   ## Create a rule to allow Ansible to connect to each VM from the Azure Cloud Shell
   ## source_address_prefix will be the IP Azure Cloud Shell is coming from
@@ -88,14 +88,14 @@ resource "azurerm_network_security_group" "monolithnsg" {
 resource "azurerm_virtual_network" "main" {
   name                = "monolith-network"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.monolithRG.location
-  resource_group_name = azurerm_resource_group.monolithRG.name
+  location            = azurerm_resource_group.cloudRG.location
+  resource_group_name = azurerm_resource_group.cloudRG.name
 }
 
 ## Create a simple subnet inside of th vNet ensuring the VMs are created first (depends_on)
 resource "azurerm_subnet" "internal" {
   name                 = "internal"
-  resource_group_name  = azurerm_resource_group.monolithRG.name
+  resource_group_name  = azurerm_resource_group.cloudRG.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefix       = "10.0.2.0/24"
 
@@ -109,8 +109,8 @@ resource "azurerm_subnet" "internal" {
 ## error but an IP will not be assigned.
 resource "azurerm_public_ip" "lbIp" {
   name                    = "publicLbIp"
-  location                = azurerm_resource_group.monolithRG.location
-  resource_group_name     = azurerm_resource_group.monolithRG.name
+  location                = azurerm_resource_group.cloudRG.location
+  resource_group_name     = azurerm_resource_group.cloudRG.name
   allocation_method       = "Static"
 }
 
@@ -118,8 +118,8 @@ resource "azurerm_public_ip" "lbIp" {
 resource "azurerm_public_ip" "vmIps" {
   count                   = 2
   name                    = "publicVmIp-${count.index}"
-  location                = azurerm_resource_group.monolithRG.location
-  resource_group_name     = azurerm_resource_group.monolithRG.name
+  location                = azurerm_resource_group.cloudRG.location
+  resource_group_name     = azurerm_resource_group.cloudRG.name
   allocation_method       = "Dynamic"
   domain_name_label       = "${var.domain_name_prefix}-${count.index}"
 }
@@ -129,8 +129,8 @@ resource "azurerm_public_ip" "vmIps" {
 resource "azurerm_network_interface" "main" {
   count               = 2
   name                = "monolith-nic-${count.index}"
-  location            = azurerm_resource_group.monolithRG.location
-  resource_group_name = azurerm_resource_group.monolithRG.name
+  location            = azurerm_resource_group.cloudRG.location
+  resource_group_name = azurerm_resource_group.cloudRG.name
   
   ## Simple ip configuration for each vNic
   ip_configuration {
@@ -157,8 +157,8 @@ resource "azurerm_network_interface_security_group_association" "nsg" {
 ## IP address created earlier.
 resource "azurerm_lb" "LB" {
  name                = "nobsloadbalancer"
- location            = azurerm_resource_group.monolithRG.location
- resource_group_name = azurerm_resource_group.monolithRG.name
+ location            = azurerm_resource_group.cloudRG.location
+ resource_group_name = azurerm_resource_group.cloudRG.name
 
  frontend_ip_configuration {
    name                 = "lb_frontend"
@@ -168,7 +168,7 @@ resource "azurerm_lb" "LB" {
 
 ## Create and assign a backend address pool which will hold both VMs behind the load balancer
 resource "azurerm_lb_backend_address_pool" "be_pool" {
- resource_group_name = azurerm_resource_group.monolithRG.name
+ resource_group_name = azurerm_resource_group.cloudRG.name
  loadbalancer_id     = azurerm_lb.LB.id
  name                = "BackEndAddressPool"
 }
@@ -184,17 +184,17 @@ resource "azurerm_network_interface_backend_address_pool_association" "be_assoc"
 ## Create a health probe which will periodically check for an open port 80
 ## on both VMs connected to the load balancer.
 resource "azurerm_lb_probe" "lbprobe" {
-  resource_group_name = azurerm_resource_group.monolithRG.name
+  resource_group_name = azurerm_resource_group.cloudRG.name
   loadbalancer_id     = azurerm_lb.LB.id
   name                = "http-running-probe"
   port                = 80
 }
 
 ## Create a rule on the load balancer to forward all incoming traffic on port 80
-## to the VMs in the backend address pool usin the health probe defined above
+## to the VMs in the backend address pool using the health probe defined above
 ## to know which VMs are available.
 resource "azurerm_lb_rule" "lbrule" {
-  resource_group_name            = azurerm_resource_group.monolithRG.name
+  resource_group_name            = azurerm_resource_group.cloudRG.name
   loadbalancer_id                = azurerm_lb.LB.id
   name                           = "LBRule"
   probe_id                       = azurerm_lb_probe.lbprobe.id
@@ -205,18 +205,18 @@ resource "azurerm_lb_rule" "lbrule" {
   frontend_ip_configuration_name = "lb_frontend"
 }
 
-## Create the two Windows VMs associating the vNIcs created earlier
+## Creates two Windows VMs associating the vNIcs created earlier
 resource "azurerm_windows_virtual_machine" "monolithVMs" {
   count                 = 2
   name                  = "monolithvm-${count.index}"
   location              = var.location
-  resource_group_name   = azurerm_resource_group.monolithRG.name
+  resource_group_name   = azurerm_resource_group.cloudRG.name
   size                  = "Standard_DS1_v2"
   network_interface_ids = [azurerm_network_interface.main[count.index].id]
   availability_set_id   = azurerm_availability_set.monolith-as.id
   computer_name         = "monolithvm-${count.index}"
-  admin_username        = "testadmin"
-  admin_password        = "Password1234!"
+  admin_username        = "admin"
+  admin_password        = "Password2021!"
   
   source_image_reference {
     publisher = "MicrosoftWindowsServer"
@@ -248,17 +248,17 @@ resource "azurerm_virtual_machine_extension" "enablewinrm" {
   auto_upgrade_minor_version = true
   settings = <<SETTINGS
     {
-      "fileUris": ["https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"],
+      "fileUris": ["https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"], ## This is the default script provided by ansible community for enabling RDP and SSH.
       "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File ConfigureRemotingForAnsible.ps1"
     }
 SETTINGS
 }
 
 output "VMIps" {
-  value       = azurerm_public_ip.vmIps.*.ip_address
+  value       = azurerm_public_ip.vmIps.*.ip_address     ## Returns the IP address of two VMs
 }
 
-## Return the load balancer's public IP address so we know what IP we can connect to and test this.
+#### This code will return the public ip of the load balancer. This IP address can be used to connect and test the website after the deployment.
 output "Load_Balancer_IP" {
   value       = azurerm_public_ip.lbIp.ip_address
 }
