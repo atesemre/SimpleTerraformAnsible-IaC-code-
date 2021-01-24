@@ -248,17 +248,17 @@ resource "azurerm_virtual_machine_extension" "enablewinrm" {
   auto_upgrade_minor_version = true
   settings = <<SETTINGS
     {
-      "fileUris": ["https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"], ## This is the default script provided by ansible community for enabling RDP and SSH.
+      "fileUris": ["https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"],
       "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File ConfigureRemotingForAnsible.ps1"
     }
 SETTINGS
 }
 
 output "VMIps" {
-  value       = azurerm_public_ip.vmIps.*.ip_address     ## Returns the IP address of two VMs
+  value       = azurerm_public_ip.vmIps.*.ip_address
 }
 
-#### This code will return the public ip of the load balancer. This IP address can be used to connect and test the website after the deployment.
+## This code will return the public ip of the load balancer. This IP address can be used to connect and test the website after the deployment.
 output "Load_Balancer_IP" {
   value       = azurerm_public_ip.lbIp.ip_address
 }
