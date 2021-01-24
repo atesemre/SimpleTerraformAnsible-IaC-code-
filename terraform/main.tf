@@ -1,34 +1,32 @@
-## Ensure you're using 2.0+ of the azurevm provider to get the azurerm_windows_virtual_machine reosurce and
+## Confirm that you are using azurevm provider version 2.0 to get the azurerm_windows_virtual_machine reosurce and
 ## the other resources and capabilities
 provider "azurerm" {
   version = "2.0.0"
   features {}
 }
 
-## Create an Azure resource group using the value of resource_group and the location of the location variable
-## defined in the terraform.tfvars file.
+## To create an Azure resource group using the value of resource_group
+## Variables such as Name and Location of the resource group are defined in the terraform.tfvars file.
 resource "azurerm_resource_group" "cloudRG" {
   name     = var.resource_group
   location = var.location
 }
 
-## Create an availability set called cloud-as which the VMs will go into using the same location and resource
-## group
+## To create an availability set named cloud-as 
 resource "azurerm_availability_set" "cloud-as" {
   name                = "cloud-as"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
 }
 
-## Create an Azure NSG to protect the infrastructure called nsg.
+## To create Network Security GrouP named nsg to filter the traffic at resources 
 resource "azurerm_network_security_group" "cloudnsg" {
   name                = "nsg"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
   
-  ## Create a rule to allow Ansible to connect to each VM from the Azure Cloud Shell
-  ## source_address_prefix will be the IP Azure Cloud Shell is coming from
-  ## You'll pass the value of the variable to the plan when invoking it.
+## Rule which allows Ansible to connect to the Virtual Machines from Azure Cloud Shell
+## source_address_prefix will be the IP Azure Cloud Shell is defined in variables file 
   security_rule {
     name                       = "allowWinRm"
     priority                   = 101
@@ -41,10 +39,7 @@ resource "azurerm_network_security_group" "cloudnsg" {
     destination_address_prefix = "*"
   }
   
-  ## Create a rule to allow your local machine with Visual Studio installed to connect to
-  ## the web management service and Web Deploy to deploy a web app. This locks down Web Deploy
-  ## to your local public IP address.
-  ## You'll pass the value of the variable to the plan when invoking it.
+## Rule for allowing Visual Studio installed on local machine to connect with the web management service to deploy app
   security_rule {
     name                       = "allowWebDeploy"
     priority                   = 102
@@ -57,7 +52,7 @@ resource "azurerm_network_security_group" "cloudnsg" {
     destination_address_prefix = "*"
   }
   
-  ## Create a rule to allow web clients to connect to the web app
+##Rule for allowing web clients to connect to our web application
   security_rule {
     name                       = "allowPublicWeb"
     priority                   = 103
@@ -70,7 +65,7 @@ resource "azurerm_network_security_group" "cloudnsg" {
     destination_address_prefix = "*"
   }
   
-  ## not required. Only needed if you need to RDP to the VMs to troubleshoot
+## Rule for in case we require RDP to the VMs for troubleshooting
   security_rule {
     name                       = "allowRDP"
     priority                   = 104
@@ -84,7 +79,7 @@ resource "azurerm_network_security_group" "cloudnsg" {
   }
 }
 
-## Create a simple vNet
+## Create a vNet
 resource "azurerm_virtual_network" "main" {
   name                = "cloud-network"
   address_space       = ["10.0.0.0/16"]
@@ -92,7 +87,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.cloudRG.name
 }
 
-## Create a simple subnet inside of th vNet ensuring the VMs are created first (depends_on)
+## Create a subnet inside of the vNet 
 resource "azurerm_subnet" "internal" {
   name                 = "internal"
   resource_group_name  = azurerm_resource_group.cloudRG.name
@@ -104,9 +99,8 @@ resource "azurerm_subnet" "internal" {
   ]
 }
 
-## You need a public IP to assign to the load balancer for client applications to 
-## connect to the web app. Ensure this is static otherwise, the deployment will go through without
-## error but an IP will not be assigned.
+## Assign public IP to the load balancer so that client applications will connect to the web app. 
+## IP should be static else IP will not be assigned.
 resource "azurerm_public_ip" "lbIp" {
   name                    = "publicLbIp"
   location                = azurerm_resource_group.cloudRG.location
@@ -124,15 +118,14 @@ resource "azurerm_public_ip" "vmIps" {
   domain_name_label       = "${var.domain_name_prefix}-${count.index}"
 }
 
-## Create a vNic for each VM. Using the count property to create two vNIcs while using ${count.index}
-## to refer to each VM which will be defined in an array
+## to create Network Interface Cards for each Virtual Machine
 resource "azurerm_network_interface" "main" {
   count               = 2
   name                = "cloud-nic-${count.index}"
   location            = azurerm_resource_group.cloudRG.location
   resource_group_name = azurerm_resource_group.cloudRG.name
   
-  ## Simple ip configuration for each vNic
+## IP configuration for each Network Interface Card
   ip_configuration {
     name                          = "ip_config"
     subnet_id                     = azurerm_subnet.internal.id
@@ -140,21 +133,20 @@ resource "azurerm_network_interface" "main" {
     public_ip_address_id          = azurerm_public_ip.vmIps[count.index].id
   }
   
-  ## Ensure the subnet is created first before creating these vNics.
+##  Create Resource dependancy such that subnet is created before creating vNics.
   depends_on = [
     azurerm_subnet.internal
   ]
 }
-
-## Apply the NSG to each of the VMs' NICs
+		
+## Associate the NSG to Virtual Machines and NICs 
 resource "azurerm_network_interface_security_group_association" "nsg" {
   count                     = 2
   network_interface_id      = azurerm_network_interface.main[count.index].id
   network_security_group_id = azurerm_network_security_group.cloudnsg.id
 }
 
-## Create the load balancer with a frontend configuration using the public
-## IP address created earlier.
+## Load balancer frontend configuration using the public IP address created in previous steps.
 resource "azurerm_lb" "LB" {
  name                = "nobsloadbalancer"
  location            = azurerm_resource_group.cloudRG.location
@@ -166,14 +158,14 @@ resource "azurerm_lb" "LB" {
  }
 }
 
-## Create and assign a backend address pool which will hold both VMs behind the load balancer
+## Load balancer backend configuration
 resource "azurerm_lb_backend_address_pool" "be_pool" {
  resource_group_name = azurerm_resource_group.cloudRG.name
  loadbalancer_id     = azurerm_lb.LB.id
  name                = "BackEndAddressPool"
 }
 
-## Assign both vNics on the VMs to the backend address pool
+## Assign both NICs and VMs to backend of Load balancer
 resource "azurerm_network_interface_backend_address_pool_association" "be_assoc" {
   count                   = 2
   network_interface_id    = azurerm_network_interface.main[count.index].id
@@ -181,8 +173,7 @@ resource "azurerm_network_interface_backend_address_pool_association" "be_assoc"
   backend_address_pool_id = azurerm_lb_backend_address_pool.be_pool.id
 }
 
-## Create a health probe which will periodically check for an open port 80
-## on both VMs connected to the load balancer.
+## Create a health probe load balancer 
 resource "azurerm_lb_probe" "lbprobe" {
   resource_group_name = azurerm_resource_group.cloudRG.name
   loadbalancer_id     = azurerm_lb.LB.id
@@ -190,9 +181,7 @@ resource "azurerm_lb_probe" "lbprobe" {
   port                = 80
 }
 
-## Create a rule on the load balancer to forward all incoming traffic on port 80
-## to the VMs in the backend address pool using the health probe defined above
-## to know which VMs are available.
+## Directt traffic to load balancer backend
 resource "azurerm_lb_rule" "lbrule" {
   resource_group_name            = azurerm_resource_group.cloudRG.name
   loadbalancer_id                = azurerm_lb.LB.id
@@ -205,7 +194,7 @@ resource "azurerm_lb_rule" "lbrule" {
   frontend_ip_configuration_name = "lb_frontend"
 }
 
-## Creates two Windows VMs associating the vNIcs created earlier
+## Associate VMs and vNIcs created earier
 resource "azurerm_windows_virtual_machine" "cloudVMs" {
   count                 = 2
   name                  = "cloudvm-${count.index}"
@@ -234,10 +223,7 @@ resource "azurerm_windows_virtual_machine" "cloudVMs" {
   ]
 }
 
-## Install the custom script VM extension to each VM. When the VM comes up,
-## the extension will download the ConfigureRemotingForAnsible.ps1 script from GitHub
-## and execute it to open up WinRM for Ansible to connect to it from Azure Cloud Shell.
-## exit code has to be 0
+## Install the custom script VM extension at each virtual machine in the network
 resource "azurerm_virtual_machine_extension" "enablewinrm" {
   count                 = 2
   name                  = "enablewinrm"
