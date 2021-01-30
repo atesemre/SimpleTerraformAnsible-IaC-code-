@@ -10,7 +10,6 @@ Tools and Technologies used:
 4. Visual Studio 2019 – The Pro IDE
 
 Deployment Plan:
-
 1. The user will log in to the Azure portal and use Azure Cloud Shell to run Terraform and Ansible scripts.
 2. Terraform scripts are run and a resource group with two Windows VMs having proper network configurations is created.
 3. After the successful creation of VMs, IIS (Internet Information Services – a web server software package specifically designed for windows) and some other modules are configured on both of the VMs using their IP’s. They are required to run an ASP.NET web app on a Windows server.
