@@ -1,3 +1,4 @@
+# We referred this terraform configurations from https://github.com/NoBSDevOps/BookResources/blob/master/Part-II-Project/Virtual-Machines/Terraform-VMs/VMs/main.tf
 
 provider "azurerm" {
   version = "2.0.0"
