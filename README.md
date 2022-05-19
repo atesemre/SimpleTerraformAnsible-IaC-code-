@@ -15,4 +15,4 @@ Deployment Plan:
 3. After the successful creation of VMs, IIS (Internet Information Services – a web server software package specifically designed for windows) and some other modules are configured on both of the VMs using their IP’s. They are required to run an ASP.NET web app on a Windows server.
 4. A self-created web app or app cloned from the provided GitHub link is published on both of the VMs using Visual Studio 2019 and accessed through the public IP of the load balancer.
 
-The detailed documentation about the implementation can be found [here](Documentation/Infrastructure_as_Code_v4.pdf).
+The detailed documentation about the implementation can be found [here](Documentation/Infrastructure_as_code_v4.pdf).
